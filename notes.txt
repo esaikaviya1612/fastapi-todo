@@ -1,0 +1,233 @@
+Title 1: BASICS
+Set up:
+-> python --version
+-> create folder fast-api
+-> python -m venv .venv (virtuali)
+-> .\.venv\Scripts\Activate.ps1(activate virtuali)
+-> install pip or uv 
+   - uv init .
+   - uv add fastapi
+   - uv add python-dotenv
+   - uv add imagekitio
+   - uv add fastapi "uvicorn[standard]" sqlalchemy (uvi corn: is a webserver allows us to serve our fast API application, sqlalchemy:for authentication and authorization)
+   - uv add aiosqlite (for interacting with  DB)
+
+In main.py
+Step 1:
+-import FastAPI from fastapi
+
+Step 2: Concept 
+- app = FastAPI() — FastAPI application create pannum.
+- @app.get("/") — / URL-ku GET request vandha, keela irukkura function execute aagum.
+- def view(): — namma function.
+- return "Hello bro" — JSON response return pannum.
+
+To run :uvicorn main:app --reload #(why --reload : automatic run when we change anything )
+
+Output : option 1:url varum http://127.0.0.1:8000/path = browser la display aagum 
+         option 2:use http://127.0.0.1:8000/docs = swaggerui without using postman we will done within this 
+
+Title 2: PARAMETER (url's parameter)
+1..PATH PARAMETER:
+    - Specific resource identify panna,
+    - URL:	/students/101,
+    - Syntax:	{student_id},
+    - FastAPI:	"/students/{student_id}"
+2.QUERY PARAMETER:
+- Data filter/search panna,
+- URL: /students?department=CSE,
+- Syntax:	?department=CSE,
+- FastAPI:	"/students"
+3.REQUEST BODY: used to Send data in structured manner to server/DB/backend
+4.PYDANTIC MODEL: library to create request BODY
+//uses
+ - validation
+ - serialization(example : when dataset in JSON format but i want to change before send to backend  )
+ - documetation
+5.NESTED MODEL:
+ - Error occur->When one class is used in request body we must want to enter the datas in the fields
+ example:this is our schema
+ {
+  "name": "WWW",
+  "price": 1,
+  "availability": true,
+  "manufacture": {
+    "company": "string",
+    "country": "string"
+  }
+} 
+  "name": "WWW",
+  "price": 1,
+  "availability": true  #it is requestbody's values
+
+  "manufacture": {
+    "company": "string",
+    "country": "string"
+  }# this is our manf class's value 
+
+  TRY: {
+  "name": "pen",
+  "price": 10,
+  "availability": true,
+} ERROR SHOWS:LIKE THIS {
+  "detail": [
+    {
+      "type": "missing",
+      "loc": [
+        "body",
+        "manufacture"
+      ],
+      "msg": "Field required",
+      "input": {
+        "name": "PEN",
+        "price": 10,
+        "availability": true
+      }
+    }
+  ]
+}
+
+TITLE 3: VALIDATIONS 
+ - multiple_of
+ - optional
+ -restrictions -> uppercase ,lowercase,ranges of values ,empty 
+
+ from fastapi import FastAPI,Query,Path
+from pydantic import BaseModel,Field
+from typing import Optional
+
+app= FastAPI() #create obj
+#-------------------------basics------------------------------------------------------------------------
+# @app.get("/display") #decorator
+
+# #method
+# def view():
+#     return "Hello Bro..!"
+
+#------------------------------------PATH PARAMTER---------------------------------------------------------
+# @app.get("/display/{id}") 
+
+# def view(id):
+#     return f"id: {id}"
+
+#------------------------------------PATH PARAMTER USING LIST ---------------------------------------------------------
+emp=[
+    {'id':101, 'name':'CSE', 'place':'Chennai'},
+    {'id':102, 'name':'IT', 'place':'Coimbatore'},
+
+]
+
+# #1.USING INT ID 
+# @app.get("/display/{id}") 
+
+# def view(id:int):
+#     for e in emp:
+#         if e['id']==id:
+#             return e
+
+# #2.USING STR ID 
+# @app.get("/display/{name}") 
+
+# def view(name:str):
+#     for e in emp:
+#         if e['name']==name:
+#             return e
+
+#------------------------------------QUERY PARAMTER ---------------------------------------------------------
+
+# @app.get("/display") 
+
+# def viewForQuery(id:int):
+#     for e in emp:
+#         if e['id']==id:
+#             return e
+
+#------------------------------------REQUEST BODY---------------------------------------------------------
+#---1.Without validation------
+# class items(BaseModel): #MODEL
+#     name: str
+#     price: float
+#     availability: bool
+
+# @app.post("/display") 
+
+# def view(data:items):
+#     return {"message": "Item Received", "data":data}
+
+
+#---2.With Validation using "optional"-----
+# class items(BaseModel):
+#     name: str
+#     price: float
+#     availability: Optional[bool]= None
+
+# @app.post("/display") 
+
+# def view(data:items):
+#     return {"message": "Item Received", "data":data}
+
+
+#---3.With Validation using "restriction" (when empty) -----
+# class items(BaseModel):
+#     # name: str 
+#     # name: str = Field(min_length=3,max_length=50) #when field leave empty
+#     name: str = Field(min_length=3,max_length=50,pattern="^[a-zA-Z]") #when field wants to follow patterns use RegularExpression 
+#     # price: float
+#     price: float=Field(gt=0,lt=10000) #value restriction
+#     availability: Optional[bool]= None
+
+# @app.post("/display") 
+
+# def view(data:items):
+#     return {"message": "Item Received", "data":data}
+
+#QUERY PARAMETER VALIDATION
+#---4.With validation in Integer Query Parameter ----------
+# @app.get("/display") 
+
+# def viewForQuery(id:int=Query(ge=100,le=200)):
+#     for e in emp:
+#         if e['id']==id:
+#             return e
+
+#---5.With validation in String Query Parameter ----------
+# @app.get("/display") 
+
+# def viewForQuery(name:str=Query(min_length=2,max_length=50,regex="^[a-zA-Z]")):
+#     for e in emp:
+#         if e['name'].lower()==name.lower():
+#             return e
+
+
+#---6.With validation in Integer & String Query Parameter ----------
+# @app.get("/display") 
+
+# def viewForQuery(id:int=Query(ge=100,le=200),name:str=Query(min_length=2,max_length=50,regex="^[a-zA-Z]")):
+#     for e in emp:
+#         if e['id']==id and e['name'].lower()==name.lower():
+#             return e
+
+#PATH PARAMETER VALIDATION
+
+@app.get("/display/{id}") 
+
+def view(id:int=Path(ge=100,le=200,multiple_of=2)):
+    for e in emp:
+        if e['id']==id:
+            return e
+
+#------------------------------------REQUEST BODY @ NESTED MODEL---------------------------------------------------------
+
+# class manf(BaseModel):
+#     company: str
+#     country: str
+# class items(BaseModel):
+#     name: str = Field(min_length=3,max_length=50,pattern="^[a-zA-Z]") 
+#     price: float=Field(gt=0,lt=10000) 
+#     availability: Optional[bool]= None
+#     manufacture:manf
+
+# @app.post("/display") 
+
+# def view(data:items):
+#     return {"message": "Item Received", "data":data}
